@@ -1,5 +1,7 @@
 *~
-fke.dat
+fke*.dat
 fluidomp
 .cache/
 compile_commands.json
+
+!fke-orig.dat
