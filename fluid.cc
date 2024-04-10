@@ -136,11 +136,11 @@ void zeroResidual(float *presid, float *uresid, float *vresid, float *wresid,
     for(int j=-1;j<nj+1;++j) {
       int offset = kstart+i*iskip+j*jskip;
       for(int k=-1;k<nk+1;++k) {
-	const int indx = k+offset ;
-	presid[indx] = 0 ;
-	uresid[indx] = 0 ;
-	vresid[indx] = 0 ;
-	wresid[indx] = 0 ;
+		const int indx = k+offset ;
+		presid[indx] = 0 ;
+		uresid[indx] = 0 ;
+		vresid[indx] = 0 ;
+		wresid[indx] = 0 ;
       }
     }
   }
