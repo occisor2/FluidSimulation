@@ -17,10 +17,12 @@ void setInitialConditions(float *p, float *u, float *v, float *w,
   const int kskip=1 ;
   const float l = 1.0 ;
   const float coef = 1.0 ;
+
+#pragma omp parallel for collapse(2)
   for(int i=0;i<ni;++i) {
-    float dx = (1./ni)*L ;
-    float x = 0.5*dx + (i)*dx - 0.5*L ;
     for(int j=0;j<nj;++j) {
+	  float dx = (1./ni)*L ;
+	  float x = 0.5*dx + (i)*dx - 0.5*L ;
       float dy = (1./nj)*L ;
       float y = 0.5*dy+j*dy - 0.5*L ;
       int offset = kstart+i*iskip+j*jskip;
