@@ -25,14 +25,14 @@ void setInitialConditions(float *p, float *u, float *v, float *w,
       float y = 0.5*dy+j*dy - 0.5*L ;
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-	int indx = offset + k ;
-	float dz = (1./nk)*L  ;
-	float z = 0.5*dz+k*dz - 0.5*L ;
-	// 3-D taylor green vortex
-	u[indx] = 1.*coef*sin(x/l)*cos(y/l)*cos(z/l) ;
-	v[indx] = -1.*coef*cos(x/l)*sin(y/l)*cos(z/l) ;
-	p[indx] = (1./16.)*coef*coef*(cos(2.*x/l)+cos(2.*y/l))*(cos(2.*z/l)+2.) ;
-	w[indx] = 0 ;
+		  int indx = offset + k ;
+		  float dz = (1./nk)*L  ;
+		  float z = 0.5*dz+k*dz - 0.5*L ;
+		  // 3-D taylor green vortex
+		  u[indx] = 1.*coef*sin(x/l)*cos(y/l)*cos(z/l) ;
+		  v[indx] = -1.*coef*cos(x/l)*sin(y/l)*cos(z/l) ;
+		  p[indx] = (1./16.)*coef*coef*(cos(2.*x/l)+cos(2.*y/l))*(cos(2.*z/l)+2.) ;
+		  w[indx] = 0 ;
       }
     }
   }
