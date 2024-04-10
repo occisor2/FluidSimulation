@@ -406,6 +406,7 @@ void weightedSum3(float *uout, float w1, const float *u1, float w2,
 		  int ni, int nj, int nk, int kstart,
 		  int iskip, int jskip) {
   const int kskip = 1 ;
+#pragma omp parallel for collapse(2)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
       int offset = kstart+i*iskip+j*jskip;
