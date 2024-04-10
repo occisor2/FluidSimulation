@@ -355,20 +355,21 @@ float computeStableTimestep(const float *u, const float *v, const float *w,
 			    int iskip, int jskip) {
   const int kskip = 1 ;
   float minDt = 1e30;
+#pragma omp parallel for reduction(min:minDt)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-	const int indx = k+offset ;
-	// inviscid timestep
-	const float maxu2 = max(u[indx]*u[indx],max(v[indx]*v[indx],w[indx]*w[indx])) ;
-	const float af = sqrt(maxu2+eta) ;
-	const float maxev = sqrt(maxu2)+af ;
-	const float sum = maxev*(1./dx+1./dy+1./dz) ;
-	minDt=min(minDt,cfl/sum) ;
-	// viscous stable timestep
-	const float dist = min(dx,min(dy,dz)) ;
-	minDt=min<float>(minDt,0.2*cfl*dist*dist/nu) ;
+		const int indx = k+offset ;
+		// inviscid timestep
+		const float maxu2 = max(u[indx]*u[indx],max(v[indx]*v[indx],w[indx]*w[indx])) ;
+		const float af = sqrt(maxu2+eta) ;
+		const float maxev = sqrt(maxu2)+af ;
+		const float sum = maxev*(1./dx+1./dy+1./dz) ;
+		minDt=min(minDt,cfl/sum) ;
+		// viscous stable timestep
+		const float dist = min(dx,min(dy,dz)) ;
+		minDt=min<float>(minDt,0.2*cfl*dist*dist/nu) ;
       }
     }
   }
