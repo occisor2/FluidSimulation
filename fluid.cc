@@ -384,13 +384,14 @@ float integrateKineticEnergy(const float *u, const float *v, const float *w,
   const int kskip = 1 ;
   double vol = dx*dy*dz ;
   double sum = 0 ;
+#pragma omp parallel for reduction(+:sum)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-	const int indx = k+offset ;
-	const float udotu = u[indx]*u[indx]+v[indx]*v[indx]+w[indx]*w[indx] ;
-	sum += 0.5*vol*udotu ;
+		const int indx = k+offset ;
+		const float udotu = u[indx]*u[indx]+v[indx]*v[indx]+w[indx]*w[indx] ;
+		sum += 0.5*vol*udotu ;
       }
     }
   }
