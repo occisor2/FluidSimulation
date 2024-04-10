@@ -18,7 +18,7 @@ void setInitialConditions(float *p, float *u, float *v, float *w,
   const float l = 1.0 ;
   const float coef = 1.0 ;
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
 	  float dx = (1./ni)*L ;
@@ -46,7 +46,7 @@ void copyPeriodic(float *p, float *u, float *v, float *w,
 		  int ni, int nj, int nk , int kstart, int iskip, int jskip) {
   const int kskip=1 ;
   // copy the i periodic faces
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int j=0;j<nj;++j) {
     for(int k=0;k<nk;++k) {
       int indx = kstart+j*jskip+k*kskip;
@@ -72,7 +72,7 @@ void copyPeriodic(float *p, float *u, float *v, float *w,
     }
   }
   // copy the j periodic faces
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int k=0;k<nk;++k) {
 	  int offset = kstart+i*iskip;
@@ -99,7 +99,7 @@ void copyPeriodic(float *p, float *u, float *v, float *w,
     }
   }
   // copy the k periodic faces
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
 	  int offset = kstart+i*iskip;
@@ -132,11 +132,11 @@ void copyPeriodic(float *p, float *u, float *v, float *w,
 void zeroResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		  int ni, int nj, int nk , int kstart, int iskip, int jskip) {
   const int kskip=1 ;
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(3) schedule(static)
   for(int i=-1;i<ni+1;++i) {
     for(int j=-1;j<nj+1;++j) {
-      int offset = kstart+i*iskip+j*jskip;
       for(int k=-1;k<nk+1;++k) {
+		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		presid[indx] = 0 ;
 		uresid[indx] = 0 ;
@@ -162,10 +162,11 @@ void computeResidual(float *presid, float *uresid, float *vresid, float *wresid,
   const int kskip=1 ;
   // Loop through i faces of the mesh and compute fluxes in x direction
   // Add fluxes to cells that neighbor face
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni+1;++i) {
-    const float vcoef = nu/dx ;
-    const float area = dy*dz ;
     for(int j=0;j<nj;++j) {
+	  const float vcoef = nu/dx ;
+	  const float area = dy*dz ;
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
 		const int indx = k+offset ;
@@ -210,23 +211,33 @@ void computeResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		uflux = area*(uflux - vcoef*((5./4.)*(ur-ul) - (1./12.)*(urr-ull))) ;
 		vflux = area*(vflux - vcoef*((5./4.)*(vr-vl) - (1./12.)*(vrr-vll))) ;
 		wflux = area*(wflux - vcoef*((5./4.)*(wr-wl) - (1./12.)*(wrr-wll))) ;
+
+#pragma omp atomic
 		presid[indx-iskip] -= pflux ;
+#pragma omp atomic
 		presid[indx] += pflux ;
+#pragma omp atomic
 		uresid[indx-iskip] -= uflux ;
+#pragma omp atomic
 		uresid[indx] += uflux ;
+#pragma omp atomic
 		vresid[indx-iskip] -= vflux ;
+#pragma omp atomic
 		vresid[indx] += vflux ;
+#pragma omp atomic
 		wresid[indx-iskip] -= wflux ;
+#pragma omp atomic
 		wresid[indx] += wflux ;
       }
     }
   }
   // Loop through j faces of the mesh and compute fluxes in y direction
   // Add fluxes to cells that neighbor face
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
-    const float vcoef = nu/dy ;
-    const float area = dx*dz ;
     for(int j=0;j<nj+1;++j) {
+	  const float vcoef = nu/dy ;
+	  const float area = dx*dz ;
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
 		const int indx = k+offset ;
@@ -272,23 +283,33 @@ void computeResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		uflux = area*(uflux - vcoef*((5./4.)*(ur-ul) - (1./12.)*(urr-ull))) ;
 		vflux = area*(vflux - vcoef*((5./4.)*(vr-vl) - (1./12.)*(vrr-vll))) ;
 		wflux = area*(wflux - vcoef*((5./4.)*(wr-wl) - (1./12.)*(wrr-wll))) ;
+
+#pragma omp atomic
 		presid[indx-jskip] -= pflux ;
+#pragma omp atomic
 		presid[indx] += pflux ;
+#pragma omp atomic
 		uresid[indx-jskip] -= uflux ;
+#pragma omp atomic
 		uresid[indx] += uflux ;
+#pragma omp atomic
 		vresid[indx-jskip] -= vflux ;
+#pragma omp atomic
 		vresid[indx] += vflux ;
+#pragma omp atomic
 		wresid[indx-jskip] -= wflux ;
+#pragma omp atomic
 		wresid[indx] += wflux ;
       }
     }
   }
   // Loop through k faces of the mesh and compute fluxes in z direction
   // Add fluxes to cells that neighbor face
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
-    const float vcoef = nu/dz ;
-    const float area = dx*dy ;
     for(int j=0;j<nj;++j) {
+	  const float vcoef = nu/dz ;
+	  const float area = dx*dy ;	  
       int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk+1;++k) {
 		const int indx = k+offset ;
@@ -334,13 +355,22 @@ void computeResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		uflux = area*(uflux - vcoef*((5./4.)*(ur-ul) - (1./12.)*(urr-ull))) ;
 		vflux = area*(vflux - vcoef*((5./4.)*(vr-vl) - (1./12.)*(vrr-vll))) ;
 		wflux = area*(wflux - vcoef*((5./4.)*(wr-wl) - (1./12.)*(wrr-wll))) ;
+
+#pragma omp atomic
 		presid[indx-kskip] -= pflux ;
+#pragma omp atomic
 		presid[indx] += pflux ;
+#pragma omp atomic
 		uresid[indx-kskip] -= uflux ;
+#pragma omp atomic
 		uresid[indx] += uflux ;
+#pragma omp atomic
 		vresid[indx-kskip] -= vflux ;
+#pragma omp atomic
 		vresid[indx] += vflux ;
+#pragma omp atomic
 		wresid[indx-kskip] -= wflux ;
+#pragma omp atomic
 		wresid[indx] += wflux ;
       }
     }
@@ -355,11 +385,11 @@ float computeStableTimestep(const float *u, const float *v, const float *w,
 			    int iskip, int jskip) {
   const int kskip = 1 ;
   float minDt = 1e30;
-#pragma omp parallel for reduction(min:minDt)
+#pragma omp parallel for collapse(3) reduction(min:minDt) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
-      int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
+		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		// inviscid timestep
 		const float maxu2 = max(u[indx]*u[indx],max(v[indx]*v[indx],w[indx]*w[indx])) ;
@@ -384,11 +414,11 @@ float integrateKineticEnergy(const float *u, const float *v, const float *w,
   const int kskip = 1 ;
   double vol = dx*dy*dz ;
   double sum = 0 ;
-#pragma omp parallel for reduction(+:sum)
+#pragma omp parallel for collapse(3) reduction(+:sum) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
-      int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
+		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		const float udotu = u[indx]*u[indx]+v[indx]*v[indx]+w[indx]*w[indx] ;
 		sum += 0.5*vol*udotu ;
@@ -406,11 +436,11 @@ void weightedSum3(float *uout, float w1, const float *u1, float w2,
 		  int ni, int nj, int nk, int kstart,
 		  int iskip, int jskip) {
   const int kskip = 1 ;
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(3) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
-      int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
+		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		uout[indx] = w1*u1[indx] + w2*u2[indx] + w3*uout[indx] ;
       }
