@@ -132,11 +132,11 @@ void copyPeriodic(float *p, float *u, float *v, float *w,
 void zeroResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		  int ni, int nj, int nk , int kstart, int iskip, int jskip) {
   const int kskip=1 ;
-#pragma omp parallel for collapse(3) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=-1;i<ni+1;++i) {
     for(int j=-1;j<nj+1;++j) {
+	  int offset = kstart+i*iskip+j*jskip;
       for(int k=-1;k<nk+1;++k) {
-		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		presid[indx] = 0 ;
 		uresid[indx] = 0 ;
@@ -385,11 +385,11 @@ float computeStableTimestep(const float *u, const float *v, const float *w,
 			    int iskip, int jskip) {
   const int kskip = 1 ;
   float minDt = 1e30;
-#pragma omp parallel for collapse(3) reduction(min:minDt) schedule(static)
+#pragma omp parallel for collapse(2) reduction(min:minDt) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
+	  int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		// inviscid timestep
 		const float maxu2 = max(u[indx]*u[indx],max(v[indx]*v[indx],w[indx]*w[indx])) ;
@@ -414,11 +414,11 @@ float integrateKineticEnergy(const float *u, const float *v, const float *w,
   const int kskip = 1 ;
   double vol = dx*dy*dz ;
   double sum = 0 ;
-#pragma omp parallel for collapse(3) reduction(+:sum) schedule(static)
+#pragma omp parallel for collapse(2) reduction(+:sum) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
+	  int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		const float udotu = u[indx]*u[indx]+v[indx]*v[indx]+w[indx]*w[indx] ;
 		sum += 0.5*vol*udotu ;
@@ -436,11 +436,11 @@ void weightedSum3(float *uout, float w1, const float *u1, float w2,
 		  int ni, int nj, int nk, int kstart,
 		  int iskip, int jskip) {
   const int kskip = 1 ;
-#pragma omp parallel for collapse(3) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static)
   for(int i=0;i<ni;++i) {
     for(int j=0;j<nj;++j) {
+	  int offset = kstart+i*iskip+j*jskip;
       for(int k=0;k<nk;++k) {
-		int offset = kstart+i*iskip+j*jskip;
 		const int indx = k+offset ;
 		uout[indx] = w1*u1[indx] + w2*u2[indx] + w3*uout[indx] ;
       }
