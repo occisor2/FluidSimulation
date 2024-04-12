@@ -212,22 +212,78 @@ void computeResidual(float *presid, float *uresid, float *vresid, float *wresid,
 		vflux = area*(vflux - vcoef*((5./4.)*(vr-vl) - (1./12.)*(vrr-vll))) ;
 		wflux = area*(wflux - vcoef*((5./4.)*(wr-wl) - (1./12.)*(wrr-wll))) ;
 
-#pragma omp atomic
-		presid[indx-iskip] -= pflux ;
-#pragma omp atomic
+		//presid[indx-iskip] -= pflux ;
+
 		presid[indx] += pflux ;
-#pragma omp atomic
-		uresid[indx-iskip] -= uflux ;
-#pragma omp atomic
+
+		//uresid[indx-iskip] -= uflux ;
+
 		uresid[indx] += uflux ;
-#pragma omp atomic
-		vresid[indx-iskip] -= vflux ;
-#pragma omp atomic
+
+		//vresid[indx-iskip] -= vflux ;
+
 		vresid[indx] += vflux ;
-#pragma omp atomic
-		wresid[indx-iskip] -= wflux ;
-#pragma omp atomic
+
+		//wresid[indx-iskip] -= wflux ;
+
 		wresid[indx] += wflux ;
+      }
+
+	  for(int k=0;k<nk;++k) {
+		const int indx = k+offset ;
+		// Compute the x direction inviscid flux
+		// extract pressures from the stencil
+		float ull = u[indx-2*iskip] ;
+		float ul  = u[indx-iskip] ;
+		float ur  = u[indx] ;
+		float urr = u[indx+iskip] ;
+
+		float vll = v[indx-2*iskip] ;
+		float vl  = v[indx-iskip] ;
+		float vr  = v[indx] ;
+		float vrr = v[indx+iskip] ;
+
+		float wll = w[indx-2*iskip] ;
+		float wl  = w[indx-iskip] ;
+		float wr  = w[indx] ;
+		float wrr = w[indx+iskip] ;
+
+		float pll = p[indx-2*iskip] ;
+		float pl  = p[indx-iskip] ;
+		float pr  = p[indx] ;
+		float prr = p[indx+iskip] ;
+		float pterm = (2./3.)*(pl+pr) - (1./12.)*(pl+pr+pll+prr) ;
+		// x direction so the flux will be a function of u
+		float udotn1 = ul+ur ;
+		float udotn2 = ul+urr ;
+		float udotn3 = ull+ur ;
+		float pflux = eta*((2./3.)*udotn1 - (1./12.)*(udotn2+udotn3)) ;
+		float uflux = ((1./3.)*(ul+ur)*udotn1 -
+					   (1./24.)*((ul+urr)*udotn2 + (ull+ur)*udotn3) +
+					   pterm) ;
+		float vflux = ((1./3.)*(vl+vr)*udotn1 -
+					   (1./24.)*((vl+vrr)*udotn2 + (vll+vr)*udotn3)) ;
+
+		float wflux = ((1./3.)*(wl+wr)*udotn1 -
+					   (1./24.)*((wl+wrr)*udotn2 + (wll+wr)*udotn3)) ;
+
+		// Add in viscous fluxes integrate over face area
+		pflux *= area ;
+		uflux = area*(uflux - vcoef*((5./4.)*(ur-ul) - (1./12.)*(urr-ull))) ;
+		vflux = area*(vflux - vcoef*((5./4.)*(vr-vl) - (1./12.)*(vrr-vll))) ;
+		wflux = area*(wflux - vcoef*((5./4.)*(wr-wl) - (1./12.)*(wrr-wll))) ;
+
+		presid[indx-iskip] -= pflux ;
+		//presid[indx] += pflux ;
+
+		uresid[indx-iskip] -= uflux ;
+		//uresid[indx] += uflux ;
+		
+		vresid[indx-iskip] -= vflux ;
+		//vresid[indx] += vflux ;
+
+		wresid[indx-iskip] -= wflux ;
+		//wresid[indx] += wflux ;
       }
     }
   }
