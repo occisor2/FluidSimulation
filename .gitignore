@@ -1,5 +1,7 @@
 *~
-fke*.dat
+fkte*.dat
+out*
+slurm*
 fluidomp
 .cache/
 compile_commands.json
